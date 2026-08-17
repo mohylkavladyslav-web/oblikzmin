@@ -96,7 +96,7 @@
 
 <script>
   // ⚠️ ВКАЖІТЬ ВАШ URL З GOOGLE APPS SCRIPT
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwFLn515rngeZS7m94Yo-fn7ERFRtgrszup-Cdiwz1J430amVR_N1P8vAVvrF1SDdGS/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxrOKTMljQe03KUBejvGZ6iyOpxP5DFjz0BacEHyc6ETTPbo3bYFk0fvxkQ-GVT78ev/exec";
 
   let currentUser = null;
   let authData = null; // Зберігає роль та списки
