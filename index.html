@@ -25,6 +25,9 @@
       --share: #0D9488;
       --share-hover: #0B7C71;
       --danger: #DC2626;
+      --geo: #0284C7;
+      --geo-tint: #E0F2FE;
+      --geo-hover: #0369A1;
     }
  
     * { box-sizing: border-box; }
@@ -135,6 +138,23 @@
     .btn-share { background-color: var(--share); color: white; }
     .btn-share:hover { background-color: var(--share-hover); }
  
+    .btn-geo {
+      background-color: var(--geo-tint);
+      color: var(--geo);
+    }
+    .btn-geo:hover { background-color: var(--geo); color: white; }
+ 
+    #startGeoStatus, #endGeoStatus {
+      width: 100%;
+      padding: 4px 6px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      text-align: center;
+    }
+ 
     .hidden { display: none; }
  
     .status-msg {
@@ -153,7 +173,6 @@
   </style>
 </head>
 <body>
-
 <div class="card">
   <h2>Облік змін</h2>
 
