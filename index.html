@@ -4,21 +4,152 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Облік змін</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; margin: 15px; background-color: #f4f6f9; color: #333; }
-    .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 480px; margin: 0 auto 15px auto; }
-    h2, h3 { margin-top: 0; text-align: center; }
-    .form-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; font-weight: bold; }
-    input[type="text"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    input[readonly] { background-color: #e9ecef; }
-    button { width: 100%; padding: 12px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; margin-top: 5px; }
-    .btn-primary { background-color: #007bff; color: white; }
-    .btn-success { background-color: #28a745; color: white; }
-    .btn-secondary { background-color: #6c757d; color: white; }
-    .btn-share { background-color: #17a2b8; color: white; }
+    :root {
+      --bg: #F2F3F6;
+      --surface: #FFFFFF;
+      --text: #14151A;
+      --text-muted: #6B7280;
+      --border: #E4E6EB;
+      --accent: #3454D1;
+      --accent-hover: #2942A8;
+      --accent-tint: #EBEFFC;
+      --success: #16A34A;
+      --success-hover: #128239;
+      --secondary-bg: #F1F2F5;
+      --secondary-text: #374151;
+      --secondary-border: #DDE0E6;
+      --share: #0D9488;
+      --share-hover: #0B7C71;
+      --danger: #DC2626;
+    }
+ 
+    * { box-sizing: border-box; }
+ 
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      margin: 0;
+      padding: 24px 16px;
+      background-color: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+ 
+    .card {
+      background: var(--surface);
+      padding: 28px 24px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 2px rgba(20, 21, 26, 0.04), 0 8px 24px rgba(20, 21, 26, 0.06);
+      max-width: 440px;
+      margin: 0 auto 16px auto;
+    }
+ 
+    h2, h3 {
+      font-family: 'Manrope', sans-serif;
+      margin-top: 0;
+      text-align: center;
+      letter-spacing: -0.02em;
+    }
+ 
+    h2 {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+ 
+    h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+ 
+    p { color: var(--text-muted); font-size: 14px; }
+ 
+    .form-group { margin-bottom: 16px; }
+ 
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+ 
+    input[type="text"], select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      color: var(--text);
+      background: var(--surface);
+      transition: border-color 0.15s ease;
+    }
+ 
+    input[type="text"]:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-tint);
+    }
+ 
+    input[readonly] {
+      background-color: var(--secondary-bg);
+      color: var(--secondary-text);
+    }
+ 
+    button {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Manrope', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: background-color 0.15s ease, transform 0.05s ease;
+    }
+ 
+    button:active { transform: scale(0.98); }
+ 
+    .btn-primary { background-color: var(--accent); color: white; }
+    .btn-primary:hover { background-color: var(--accent-hover); }
+ 
+    .btn-success { background-color: var(--success); color: white; }
+    .btn-success:hover { background-color: var(--success-hover); }
+ 
+    .btn-secondary {
+      background-color: var(--secondary-bg);
+      color: var(--secondary-text);
+      border: 1px solid var(--secondary-border);
+    }
+    .btn-secondary:hover { background-color: #E9EBEF; }
+ 
+    .btn-share { background-color: var(--share); color: white; }
+    .btn-share:hover { background-color: var(--share-hover); }
+ 
     .hidden { display: none; }
-    .status-msg { text-align: center; font-size: 14px; margin-top: 10px; color: #d9534f; }
+ 
+    .status-msg {
+      text-align: center;
+      font-size: 13px;
+      margin-top: 12px;
+      color: var(--danger);
+    }
+ 
+    #shareTextPreview {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+    }
   </style>
 </head>
 <body>
