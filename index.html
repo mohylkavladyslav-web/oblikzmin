@@ -130,13 +130,13 @@ fetch(WEB_APP_URL, {
     document.getElementById("authError").innerText = data.message || "Доступ заборонено.";
   }
 })
-}
+
 .catch(err => {
   showLoader(false);
   console.error(err);
   document.getElementById("authError").innerText = "Помилка зв'язку з сервером.";
 });
-
+  }
   // 2. Показати форму початку зміни
   function showStartForm() {
     document.getElementById("menuSection").classList.add("hidden");
