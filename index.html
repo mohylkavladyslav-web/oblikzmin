@@ -126,14 +126,14 @@
     .btn-share { background-color: var(--share); color: white; }
     .btn-share:hover { background-color: var(--share-hover); }
 
-    /* Примусове фарбування кнопки геолокації в синій колір */
-    .btn-geo, #startGeoBtn {
-      background-color: #0284C7 !important;
+    /* Примусово приводимо кнопку геолокації до яскравого синього кольору */
+    .btn-geo {
+      background-color: var(--geo) !important;
       color: #FFFFFF !important;
       border: none !important;
     }
-    .btn-geo:hover, #startGeoBtn:hover {
-      background-color: #0369A1 !important;
+    .btn-geo:hover {
+      background-color: var(--geo-hover) !important;
     }
 
     #startGeoStatus, #endGeoStatus {
@@ -164,7 +164,6 @@
   </style>
 </head>
 <body>
-
 <div class="card">
   <h2>Облік змін</h2>
 
