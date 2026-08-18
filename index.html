@@ -164,15 +164,13 @@
   </style>
 </head>
 <body>
-  
+
 <div class="card">
   <h2>Облік змін</h2>
 
-  <!-- Секція Авторизації -->
   <div id="authSection">
     <p style="text-align: center;">Увійдіть через Telegram для продовження</p>
     <div style="text-align: center;" id="telegramLoginContainer">
-      <!-- Налаштуйте тут вашого Telegram Бота -->
       <script async src="https://telegram.org/js/telegram-widget.js?22" 
               data-telegram-login="oblikzmin_bot" 
               data-size="large" 
@@ -182,14 +180,12 @@
     <div id="authError" class="status-msg"></div>
   </div>
 
-  <!-- Меню вибору дії -->
   <div id="menuSection" class="hidden">
     <h3>Виберіть дію</h3>
     <button class="btn-primary" onclick="showStartForm()">Розпочати зміну</button>
     <button class="btn-secondary" onclick="handleEndShiftClick()">Завершити зміну</button>
   </div>
 
-  <!-- Форма: Розпочати зміну -->
   <div id="startShiftForm" class="hidden">
     <h3>Розпочати зміну</h3>
     <form id="startForm">
@@ -212,21 +208,20 @@
       </div>
       <div class="form-group">
         <label>Розташування:*</label>
-        <button type="button" class="btn-secondary" onclick="getStartGeo()">Отримати геолокацію</button>
+        <button type="button" id="startGeoBtn" class="btn-geo" onclick="getStartGeo()" style="background-color: #0284C7 !important; color: #FFFFFF !important;">Отримати геолокацію</button>
         <input type="text" id="startGeoStatus" readonly style="margin-top: 5px;" placeholder="Геолокацію не отримано">
       </div>
       <div class="form-group">
         <label>В системі:*</label>
         <select id="startInSystem" required>
+          <option value="Ні" selected>Ні</option>
           <option value="Так">Так</option>
-          <option value="Ні">Ні</option>
         </select>
       </div>
       <button type="submit" class="btn-success">Надіслати</button>
     </form>
   </div>
 
-  <!-- Результат та кнопка "Поділитись" -->
   <div id="resultSection" class="hidden">
     <h3 id="resultTitle">Дані успішно відправлено!</h3>
     <div id="shareTextPreview" style="white-space: pre-wrap; background: #f8f9fa; padding: 10px; border: 1px solid #ddd; margin-bottom: 10px;"></div>
@@ -237,7 +232,7 @@
 </div>
 
 <script>
-  // ⚠️ ВКАЖІТЬ ВАШ URL З GOOGLE APPS SCRIPT
+  // ⚠️ URL вашого Google Apps Script
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxhjIa1o1QzlYotnQlKwRI0bLYIXYA0ppEJn_7XAi_D64Ox1zVjNtVwNDZq8ajWq1q/exec";
 
   let currentUser = null;
@@ -246,40 +241,56 @@
   let currentEndGeo = { lat: null, lng: null, time: null };
   let shareMessageText = "";
 
-  // 1. Авторизація Telegram
+  // 1. Автоматична перевірка параметрів URL для мобільних браузерів при перенаправленні від Telegram
+  document.addEventListener("DOMContentLoaded", function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const telegramId = urlParams.get('id');
+
+    if (telegramId) {
+      const user = {
+        id: telegramId,
+        first_name: urlParams.get('first_name') || '',
+        username: urlParams.get('username') || ''
+      };
+
+      window.history.replaceState({}, document.title, window.location.pathname);
+      onTelegramAuth(user);
+    }
+  });
+
+  // 2. Авторизація Telegram
   function onTelegramAuth(user) {
     currentUser = user;
     showLoader(true);
     
-    // Приклад оновленого запиту авторизації
-fetch(WEB_APP_URL, {
-  method: "POST",
-  mode: "cors",
-  redirect: "follow",
-  headers: {
-    "Content-Type": "text/plain;charset=utf-8"
-  },
-  body: JSON.stringify({ action: "checkAuth", telegramId: user.id })
-})
-.then(res => res.json())
-.then(data => {
-  showLoader(false);
-  if (data.status === "success") {
-    authData = data;
-    document.getElementById("authSection").classList.add("hidden");
-    document.getElementById("menuSection").classList.remove("hidden");
-  } else {
-    document.getElementById("authError").innerText = data.message || "Доступ заборонено.";
+    fetch(WEB_APP_URL, {
+      method: "POST",
+      mode: "cors",
+      redirect: "follow",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify({ action: "checkAuth", telegramId: user.id })
+    })
+    .then(res => res.json())
+    .then(data => {
+      showLoader(false);
+      if (data.status === "success") {
+        authData = data;
+        document.getElementById("authSection").classList.add("hidden");
+        document.getElementById("menuSection").classList.remove("hidden");
+      } else {
+        document.getElementById("authError").innerText = data.message || "Доступ заборонено.";
+      }
+    })
+    .catch(err => {
+      showLoader(false);
+      console.error(err);
+      document.getElementById("authError").innerText = "Помилка зв'язку з сервером.";
+    });
   }
-})
 
-.catch(err => {
-  showLoader(false);
-  console.error(err);
-  document.getElementById("authError").innerText = "Помилка зв'язку з сервером.";
-});
-  }
-  // 2. Показати форму початку зміни
+  // 3. Показати форму початку зміни
   function showStartForm() {
     document.getElementById("menuSection").classList.add("hidden");
     document.getElementById("startShiftForm").classList.remove("hidden");
@@ -309,7 +320,7 @@ fetch(WEB_APP_URL, {
     }
   }
 
-  // 3. Геолокація
+  // 4. Геолокація
   function getStartGeo() {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(position => {
@@ -327,7 +338,7 @@ fetch(WEB_APP_URL, {
     }
   }
 
-  // 4. Відправка початку зміни
+  // 5. Відправка початку зміни
   document.getElementById("startForm").addEventListener("submit", function(e) {
     e.preventDefault();
     if (!currentStartGeo.lat) {
@@ -353,7 +364,11 @@ fetch(WEB_APP_URL, {
     };
 
     showLoader(true);
-    fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+    fetch(WEB_APP_URL, { 
+      method: "POST", 
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload) 
+    })
       .then(res => res.json())
       .then(data => {
         showLoader(false);
@@ -368,7 +383,7 @@ fetch(WEB_APP_URL, {
       });
   });
 
-  // 5. Завершення зміни
+  // 6. Завершення зміни
   function handleEndShiftClick() {
     if (!("geolocation" in navigator)) {
       alert("Геолокація не підтримується.");
@@ -392,7 +407,11 @@ fetch(WEB_APP_URL, {
         geoTime: geoTime
       };
 
-      fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+      fetch(WEB_APP_URL, { 
+        method: "POST", 
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload) 
+      })
         .then(res => res.json())
         .then(data => {
           showLoader(false);
@@ -413,7 +432,7 @@ fetch(WEB_APP_URL, {
     });
   }
 
-  // 6. Поділитись (Web Share API)
+  // 7. Поділитись (Web Share API)
   function shareData() {
     if (navigator.share) {
       navigator.share({
@@ -421,7 +440,6 @@ fetch(WEB_APP_URL, {
         text: shareMessageText
       }).catch(err => console.log('Скасовано обмін'));
     } else {
-      // Буфер обміну, якщо Web Share API не підтримується браузером
       navigator.clipboard.writeText(shareMessageText).then(() => {
         alert("Текст скопійовано в буфер обміну!");
       });
