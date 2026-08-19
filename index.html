@@ -126,7 +126,6 @@
     .btn-share { background-color: var(--share); color: white; }
     .btn-share:hover { background-color: var(--share-hover); }
 
-    /* Примусове фарбування кнопки геолокації в синій колір */
     .btn-geo, #startGeoBtn {
       background-color: #0284C7 !important;
       color: #FFFFFF !important;
@@ -155,12 +154,6 @@
       margin-top: 12px;
       color: var(--danger);
     }
-
-    .telegram-container {
-      display: flex;
-      justify-content: center;
-      margin: 16px 0;
-    }
   </style>
 </head>
 <body>
@@ -186,6 +179,7 @@
     <button class="btn-secondary" onclick="handleEndShiftClick()">Завершити зміну</button>
   </div>
 
+  <!-- Форма початку зміни -->
   <div id="startShiftForm" class="hidden">
     <h3>Розпочати зміну</h3>
     <form id="startForm">
@@ -208,7 +202,7 @@
       </div>
       <div class="form-group">
         <label>Розташування:*</label>
-        <button type="button" id="startGeoBtn" class="btn-geo" onclick="getStartGeo()" style="background-color: #0284C7 !important; color: #FFFFFF !important;">Отримати геолокацію</button>
+        <button type="button" id="startGeoBtn" class="btn-geo" onclick="getStartGeo()">Отримати геолокацію</button>
         <input type="text" id="startGeoStatus" readonly style="margin-top: 5px;" placeholder="Геолокацію не отримано">
       </div>
       <div class="form-group">
@@ -219,29 +213,55 @@
         </select>
       </div>
       <button type="submit" class="btn-success">Надіслати</button>
+      <button type="button" class="btn-secondary" onclick="cancelToMenu('startShiftForm')">Скасувати</button>
     </form>
   </div>
 
+  <!-- Форма вибору зміни для Апарату -->
+  <div id="endShiftAparatForm" class="hidden">
+    <h3>Завершення зміни (Апарат)</h3>
+    <div class="form-group">
+      <label>Оберіть відкриту зміну:*</label>
+      <select id="openShiftsSelect"></select>
+    </div>
+    <button class="btn-success" onclick="confirmEndShiftAparat()">Завершити обрану зміну</button>
+    <button class="btn-secondary" onclick="cancelToMenu('endShiftAparatForm')">Скасувати</button>
+  </div>
+
+  <!-- Секція результату -->
   <div id="resultSection" class="hidden">
     <h3 id="resultTitle">Дані успішно відправлено!</h3>
     <div id="shareTextPreview" style="white-space: pre-wrap; background: #f8f9fa; padding: 10px; border: 1px solid #ddd; margin-bottom: 10px;"></div>
     <button class="btn-share" onclick="shareData()">Поділитись</button>
+    <button class="btn-secondary" style="margin-top: 8px;" onclick="location.reload()">На головну</button>
   </div>
 
   <div id="globalLoader" class="status-msg hidden">Завантаження...</div>
 </div>
 
 <script>
-  // ⚠️ URL вашого Google Apps Script
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxhjIa1o1QzlYotnQlKwRI0bLYIXYA0ppEJn_7XAi_D64Ox1zVjNtVwNDZq8ajWq1q/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwBWTPWrmaFkYUaHhxBjLDl68f8G6_4MELK4Tjv2tULDpBnPJVO25QOJbCqzbg6hm-I/exec";
 
   let currentUser = null;
-  let authData = null; // Зберігає роль та списки
+  let authData = null;
   let currentStartGeo = { lat: null, lng: null, time: null };
-  let currentEndGeo = { lat: null, lng: null, time: null };
   let shareMessageText = "";
 
-  // 1. Автоматична перевірка параметрів URL для мобільних браузерів при перенаправленні від Telegram
+  // Збір цифрового сліду пристрою
+  function getDeviceFingerprint() {
+    return {
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      language: navigator.language,
+      screenResolution: `${screen.width}x${screen.height}`,
+      colorDepth: screen.colorDepth,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      hardwareConcurrency: navigator.hardwareConcurrency || "Н/Д",
+      deviceMemory: navigator.deviceMemory || "Н/Д",
+      touchSupport: ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)
+    };
+  }
+
   document.addEventListener("DOMContentLoaded", function() {
     const urlParams = new URLSearchParams(window.location.search);
     const telegramId = urlParams.get('id');
@@ -258,7 +278,6 @@
     }
   });
 
-  // 2. Авторизація Telegram
   function onTelegramAuth(user) {
     currentUser = user;
     showLoader(true);
@@ -267,9 +286,7 @@
       method: "POST",
       mode: "cors",
       redirect: "follow",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8"
-      },
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ action: "checkAuth", telegramId: user.id })
     })
     .then(res => res.json())
@@ -290,7 +307,6 @@
     });
   }
 
-  // 3. Показати форму початку зміни
   function showStartForm() {
     document.getElementById("menuSection").classList.add("hidden");
     document.getElementById("startShiftForm").classList.remove("hidden");
@@ -299,14 +315,12 @@
     document.getElementById("startDate").value = now.toISOString().split('T')[0];
     document.getElementById("startTime").value = now.toTimeString().split(' ')[0].substring(0, 5);
 
-    // Заповнення ЗЗСО
     const zzsoSelect = document.getElementById("startZzso");
     zzsoSelect.innerHTML = '<option value="">-- Оберіть ЗЗСО --</option>';
     authData.zzsoList.forEach(item => {
       zzsoSelect.innerHTML += `<option value="${item}">${item}</option>`;
     });
 
-    // Обробка поля Інспектор за роллю
     if (authData.role === "aparat") {
       document.getElementById("startInspectorName").classList.add("hidden");
       const inspSelect = document.getElementById("startInspectorSelect");
@@ -320,7 +334,6 @@
     }
   }
 
-  // 4. Геолокація
   function getStartGeo() {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(position => {
@@ -338,7 +351,6 @@
     }
   }
 
-  // 5. Відправка початку зміни
   document.getElementById("startForm").addEventListener("submit", function(e) {
     e.preventDefault();
     if (!currentStartGeo.lat) {
@@ -350,6 +362,11 @@
       ? document.getElementById("startInspectorSelect").value 
       : document.getElementById("startInspectorName").value;
 
+    if (!inspector) {
+      alert("Будь ласка, оберіть інспектора!");
+      return;
+    }
+
     const payload = {
       action: "startShift",
       telegramId: currentUser.id,
@@ -360,7 +377,8 @@
       inSystem: document.getElementById("startInSystem").value,
       lat: currentStartGeo.lat,
       lng: currentStartGeo.lng,
-      geoTime: currentStartGeo.time
+      geoTime: currentStartGeo.time,
+      fingerprint: getDeviceFingerprint()
     };
 
     showLoader(true);
@@ -374,17 +392,61 @@
         showLoader(false);
         if (data.status === "success") {
           document.getElementById("startShiftForm").classList.add("hidden");
-          
           shareMessageText = `${payload.zzso}\n${payload.inspector}\nПочаток зміни: ${payload.startTime}\nВ системі: ${payload.inSystem}\nID: ${data.responseId}`;
-          
           document.getElementById("shareTextPreview").innerText = shareMessageText;
           document.getElementById("resultSection").classList.remove("hidden");
+        } else {
+          alert(data.message || "Помилка при збереженні зміни.");
         }
+      })
+      .catch(err => {
+        showLoader(false);
+        alert("Помилка відправки даних.");
       });
   });
 
-  // 6. Завершення зміни
   function handleEndShiftClick() {
+    if (authData.role === "aparat") {
+      showLoader(true);
+      fetch(WEB_APP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "getOpenShifts" })
+      })
+      .then(res => res.json())
+      .then(data => {
+        showLoader(false);
+        if (data.status === "success" && data.openShifts.length > 0) {
+          const select = document.getElementById("openShiftsSelect");
+          select.innerHTML = '<option value="">-- Оберіть зміну --</option>';
+          data.openShifts.forEach(shift => {
+            select.innerHTML += `<option value="${shift.rowIndex}">${shift.inspector} — ${shift.zzso} (${shift.date} ${shift.startTime})</option>`;
+          });
+          document.getElementById("menuSection").classList.add("hidden");
+          document.getElementById("endShiftAparatForm").classList.remove("hidden");
+        } else {
+          alert("Наразі немає відкритих змін.");
+        }
+      })
+      .catch(err => {
+        showLoader(false);
+        alert("Помилка при отриманні списку змін.");
+      });
+    } else {
+      executeEndShift(null);
+    }
+  }
+
+  function confirmEndShiftAparat() {
+    const selectedRowIndex = document.getElementById("openShiftsSelect").value;
+    if (!selectedRowIndex) {
+      alert("Будь ласка, оберіть зміну з переліку!");
+      return;
+    }
+    executeEndShift(selectedRowIndex);
+  }
+
+  function executeEndShift(selectedRowIndex) {
     if (!("geolocation" in navigator)) {
       alert("Геолокація не підтримується.");
       return;
@@ -400,11 +462,13 @@
       const payload = {
         action: "endShift",
         telegramId: currentUser.id,
+        selectedRowIndex: selectedRowIndex,
         date: todayDate,
         endTime: endTime,
         lat: position.coords.latitude,
         lng: position.coords.longitude,
-        geoTime: geoTime
+        geoTime: geoTime,
+        fingerprint: getDeviceFingerprint()
       };
 
       fetch(WEB_APP_URL, { 
@@ -417,14 +481,18 @@
           showLoader(false);
           if (data.status === "success") {
             document.getElementById("menuSection").classList.add("hidden");
+            document.getElementById("endShiftAparatForm").classList.add("hidden");
             
             shareMessageText = `${data.zzso}\n${data.inspector}\nЧас завершення зміни: ${endTime}\nID: ${data.responseId}`;
-            
             document.getElementById("shareTextPreview").innerText = shareMessageText;
             document.getElementById("resultSection").classList.remove("hidden");
           } else {
             alert(data.message || "Не вдалося знайти запис для завершення зміни.");
           }
+        })
+        .catch(err => {
+          showLoader(false);
+          alert("Помилка відправки даних.");
         });
     }, () => {
       showLoader(false);
@@ -432,7 +500,6 @@
     });
   }
 
-  // 7. Поділитись (Web Share API)
   function shareData() {
     if (navigator.share) {
       navigator.share({
@@ -444,6 +511,11 @@
         alert("Текст скопійовано в буфер обміну!");
       });
     }
+  }
+
+  function cancelToMenu(fromId) {
+    document.getElementById(fromId).classList.add("hidden");
+    document.getElementById("menuSection").classList.remove("hidden");
   }
 
   function showLoader(show) {
